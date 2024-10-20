@@ -87,13 +87,22 @@ jobs:
 
   playwright:
     if: ${{ !contains(github.head_ref , 'release/') }}
-    runs-on: ubuntu-latest
     needs: [build-demo]
     strategy:
       fail-fast: false
       max-parallel: 9
       matrix:
         shard: [
+            # Safari
+            {index: 1, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 2, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 3, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 4, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 5, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 6, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 7, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 8, os: 'macos-latest', project: 'webkit', total: 9},
+            {index: 9, os: 'macos-latest', project: 'webkit', total: 9},
             # Chrome
             {index: 1, os: 'ubuntu-latest', project: 'chromium', total: 9},
             {index: 2, os: 'ubuntu-latest', project: 'chromium', total: 9},
@@ -106,6 +115,7 @@ jobs:
             {index: 9, os: 'ubuntu-latest', project: 'chromium', total: 9},
           ]
     name: Playwright / ${{ matrix.shard.os }} / ${{ matrix.shard.index }} of ${{ matrix.shard.total }}
+    runs-on: ${{ matrix.shard.os }}
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: taiga-family/ci/actions/setup/variables@v1.94.0
@@ -166,15 +176,15 @@ jobs:
             --project=${{ matrix.shard.project }} \
             --shard=${{ matrix.shard.index }}/${{ matrix.shard.total }}
 
+      - name: Mac OS X building all dependencies
+        if: ${{ contains( matrix.shard.os, 'macos') }}
+        run: brew install pkg-config cairo pango libpng jpeg giflib librsvg
+
       - name: Combine images to get diff reports
         run: |
           npm install canvas
           npm view canvas version
           npx ts-node ./scripts/visual-testing/combine-playwright-failed-screenshots.ts
-
-      - name: Debug output
-        continue-on-error: true
-        run: tree ${{ env.PLAYWRIGHT_SNAPSHOTS_PATH }}
 
       - name: Upload artifacts / ${{ env.PLAYWRIGHT_SNAPSHOTS_ARTIFACTS_KEY }}
         uses: actions/upload-artifact@v4.4.3
